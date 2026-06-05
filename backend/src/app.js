@@ -4,7 +4,7 @@ const cors = require('cors')
 const routes = require('./routes')
 
 const app = express()
-const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || 'http://localhost:5173'
+const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || '*'
 
 app.use(
   cors({
