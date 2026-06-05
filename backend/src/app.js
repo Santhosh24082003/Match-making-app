@@ -15,7 +15,7 @@ app.use(
 app.use(express.json({ limit: '1mb' }))
 
 app.get('/', (req, res) => {
-  res.json({ message: 'DateCrew Matchmaker API is running.' })
+  res.json({ message: 'Matchmaker API is running.' })
 })
 
 app.use('/api', routes)
