@@ -1,4 +1,10 @@
-const { Customer, MatchNote, MatchSend, Profile } = require('../models')
+const { MatchNote, MatchSend } = require('../models')
+const {
+  listCustomers: listCustomersFromSource,
+  getCustomerById: getCustomerFromSource,
+  getActiveProfiles,
+  getProfileById,
+} = require('../data/dataSource')
 const {
   rankMatches,
   buildCustomerSummary,
@@ -9,7 +15,7 @@ const {
 } = require('../services/geminiService')
 
 async function listCustomers(req, res) {
-  const customers = await Customer.find({ assignedTo: req.user.username }).sort({ createdAt: 1 }).lean()
+  const customers = await listCustomersFromSource(req.user.username)
 
   return res.json(
     customers.map((customer) => ({
@@ -20,18 +26,15 @@ async function listCustomers(req, res) {
 }
 
 async function getCustomerById(req, res) {
-  const customer = await Customer.findOne({
-    _id: req.params.customerId,
-    assignedTo: req.user.username,
-  }).lean()
+  const customer = await getCustomerFromSource(req.params.customerId, req.user.username)
 
   if (!customer) {
     return res.status(404).json({ message: 'Customer not found.' })
   }
 
   const notes = await MatchNote.find({ customerId: customer._id }).sort({ createdAt: -1 }).lean()
-  const sentMatches = await MatchSend.find({ customerId: customer._id }).sort({ sentAt: -1 }).lean()
-  const matches = await Profile.find({ active: true }).lean()
+  const sentMatches = await MatchSend.find({ customerId: customer._id }).sort({ createdAt: -1 }).lean()
+  const matches = await getActiveProfiles()
   const rankedMatches = rankMatches(customer, matches).slice(0, 100)
   const explanationWindow = rankedMatches.slice(0, 20)
   const explanations = await generateMatchExplanations(customer, explanationWindow)
@@ -50,16 +53,13 @@ async function getCustomerById(req, res) {
 }
 
 async function getMatchesForCustomer(req, res) {
-  const customer = await Customer.findOne({
-    _id: req.params.customerId,
-    assignedTo: req.user.username,
-  }).lean()
+  const customer = await getCustomerFromSource(req.params.customerId, req.user.username)
 
   if (!customer) {
     return res.status(404).json({ message: 'Customer not found.' })
   }
 
-  const profiles = await Profile.find({ active: true }).lean()
+  const profiles = await getActiveProfiles()
   const rankedMatches = rankMatches(customer, profiles).slice(0, 100)
   const explanations = await generateMatchExplanations(customer, rankedMatches.slice(0, 20))
 
@@ -79,10 +79,7 @@ async function addNote(req, res) {
     return res.status(400).json({ message: 'Note text is required.' })
   }
 
-  const customer = await Customer.findOne({
-    _id: req.params.customerId,
-    assignedTo: req.user.username,
-  }).lean()
+  const customer = await getCustomerFromSource(req.params.customerId, req.user.username)
 
   if (!customer) {
     return res.status(404).json({ message: 'Customer not found.' })
@@ -100,12 +97,9 @@ async function addNote(req, res) {
 }
 
 async function sendMatch(req, res) {
-  const customer = await Customer.findOne({
-    _id: req.params.customerId,
-    assignedTo: req.user.username,
-  }).lean()
+  const customer = await getCustomerFromSource(req.params.customerId, req.user.username)
 
-  const profile = await Profile.findById(req.params.profileId).lean()
+  const profile = await getProfileById(req.params.profileId)
 
   if (!customer || !profile) {
     return res.status(404).json({ message: 'Customer or profile not found.' })

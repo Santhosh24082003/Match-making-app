@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 
-import Dashboard from './components/Dashboard'
-import LoginScreen from './components/LoginScreen'
+import Dashboard from './pages/Dashboard'
+import LoginScreen from './pages/LoginScreen'
 import { apiLogin, apiRequest } from './lib/api'
 import type {
   AuthUser,

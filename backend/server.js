@@ -3,6 +3,7 @@ const mongoose = require('mongoose')
 
 const app = require('./src/app')
 const { connectDatabase, ensureSeedData } = require('./src/config/database')
+const { getDataSourceMode } = require('./src/data/dataSource')
 
 dotenv.config()
 
@@ -15,6 +16,7 @@ async function start() {
     app.listen(PORT, () => {
         console.log(`Server is running on port ${PORT}`)
         console.log(`MongoDB state: ${mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'}`)
+        console.log(`Data source: ${getDataSourceMode()} (set DATA_SOURCE=json or DATA_SOURCE=mongodb in .env)`)
     })
 }
 

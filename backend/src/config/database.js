@@ -3,7 +3,7 @@ const mongoose = require('mongoose')
 const { MongoMemoryServer } = require('mongodb-memory-server')
 
 const { Customer, Profile, MatchmakerUser, MatchNote, MatchSend } = require('../models')
-const { buildSeedData } = require('../data/seedData')
+const { prepareForMongoInsert, loadCustomersFromJson, loadProfilesFromJson } = require('../data/jsonLoader')
 
 let inMemoryServer = null
 
@@ -58,19 +58,41 @@ async function ensureSeedData() {
   }
 
   if (customerCount === 0 || profileCount === 0) {
-    const seed = buildSeedData()
+    const customers = prepareForMongoInsert(loadCustomersFromJson())
+    const profiles = prepareForMongoInsert(loadProfilesFromJson())
 
     if (customerCount === 0) {
-      await Customer.insertMany(seed.customers)
+      await Customer.insertMany(customers)
+      console.log(`[DateCrew] Seeded ${customers.length} customers from src/data/json/customers.json`)
     }
 
     if (profileCount === 0) {
-      await Profile.insertMany(seed.profiles)
+      await Profile.insertMany(profiles)
+      console.log(`[DateCrew] Seeded ${profiles.length} profiles from src/data/json/profiles.json`)
     }
+  }
+}
+
+async function resetProfilesAndCustomersFromJson() {
+  const customers = prepareForMongoInsert(loadCustomersFromJson())
+  const profiles = prepareForMongoInsert(loadProfilesFromJson())
+
+  await Promise.all([
+    Customer.deleteMany({}),
+    Profile.deleteMany({}),
+  ])
+
+  await Customer.insertMany(customers)
+  await Profile.insertMany(profiles)
+
+  return {
+    customers: customers.length,
+    profiles: profiles.length,
   }
 }
 
 module.exports = {
   connectDatabase,
   ensureSeedData,
+  resetProfilesAndCustomersFromJson,
 }

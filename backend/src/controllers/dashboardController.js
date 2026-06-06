@@ -1,9 +1,10 @@
-const { Customer, MatchNote, MatchSend } = require('../models')
+const { MatchNote, MatchSend } = require('../models')
+const { listCustomers } = require('../data/dataSource')
 const { buildDashboardMetrics } = require('../utils/matchEngine')
 
 async function getDashboard(req, res) {
   const [customers, notes, sentMatches] = await Promise.all([
-    Customer.find({ assignedTo: req.user.username }).sort({ createdAt: 1 }).lean(),
+    listCustomers(req.user.username),
     MatchNote.find({ matchmakerUsername: req.user.username }).sort({ createdAt: -1 }).lean(),
     MatchSend.find({ sentByUsername: req.user.username }).sort({ sentAt: -1 }).lean(),
   ])
